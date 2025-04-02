@@ -1,81 +1,105 @@
-import React, { useState, useCallback } from 'react';
-    import AudioUpload from './components/AudioUpload';
-    import TranscriptionDisplay from './components/TranscriptionDisplay';
-    import TextEditor from './components/TextEditor';
-    import SpeakerIdentification from './components/SpeakerIdentification';
-    import ExportOptions from './components/ExportOptions';
-    import { Mic2, FileAudio2 } from 'lucide-react';
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
+import AudioUpload from './components/AudioUpload';
+import TranscriptionDisplay from './components/TranscriptionDisplay';
+import TextEditor from './components/TextEditor';
+import SpeakerIdentification from './components/SpeakerIdentification';
+import ExportOptions from './components/ExportOptions';
+import { useTranscriptionStore } from './store';
+import { FileAudio2 } from 'lucide-react';
 
-    function App() {
-      const [transcription, setTranscription] = useState('');
-      const [speakers, setSpeakers] = useState<string[]>([]);
-      const [editedText, setEditedText] = useState('');
+function App() {
+  const { 
+    transcription, 
+    editedText, 
+    speakers, 
+    isLoading, 
+    error,
+    setTranscription,
+    setEditedText,
+    setSpeakers,
+    setIsLoading,
+    setError
+  } = useTranscriptionStore();
 
-      const handleUpload = useCallback(async (file: File) => {
-        // Simulate transcription process
-        setTranscription('Transcribing audio...');
-        setSpeakers(['Speaker 1', 'Speaker 2']);
+  const handleUpload = async (file: File) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Simulate transcription process
+      setTranscription('Transcribing audio...');
+      setSpeakers(['Speaker 1', 'Speaker 2']);
 
-        // Simulate API call to get transcription
-        setTimeout(() => {
-          setTranscription(
-            `This is a sample transcription.  It includes multiple sentences.  We can also add more sentences to test the editor.  And even more sentences to test the editor.`,
-          );
-          setEditedText(
-            `This is a sample transcription.  It includes multiple sentences.  We can also add more sentences to test the editor.  And even more sentences to test the editor.`,
-          );
-        }, 2000);
-      }, []);
-
-      const handleTextChange = (text: string) => {
-        setEditedText(text);
-      };
-
-      const handleSpeakerSelect = (speaker: string) => {
-        console.log(`Speaker selected: ${speaker}`);
-      };
-
-      const handleExport = (format: string) => {
-        console.log(`Exporting to ${format}`);
-        // Implement export logic here
-        if (format === 'txt') {
-          const blob = new Blob([editedText], { type: 'text/plain' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'transcription.txt';
-          a.click();
-          URL.revokeObjectURL(url);
-        } else if (format === 'srt') {
-          // Implement SRT export logic
-          alert('SRT export not implemented yet');
-        } else if (format === 'docx') {
-          // Implement DOCX export logic
-          alert('DOCX export not implemented yet');
-        }
-      };
-
-      return (
-        <div className="min-h-screen bg-gray-100 py-6 flex flex-col items-center">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center mb-8">
-              <FileAudio2 className="h-12 w-12 mr-2 text-blue-500" />
-              <h1 className="text-3xl font-bold text-gray-800">Audio Transcription</h1>
-            </div>
-
-            <AudioUpload onUpload={handleUpload} />
-
-            {transcription && (
-              <div className="mt-8 space-y-6">
-                <TranscriptionDisplay transcription={transcription} />
-                <TextEditor initialText={editedText} onTextChange={handleTextChange} />
-                <SpeakerIdentification speakers={speakers} onSpeakerSelect={handleSpeakerSelect} />
-                <ExportOptions text={editedText} onExport={handleExport} />
-              </div>
-            )}
-          </div>
-        </div>
-      );
+      // Simulate API call
+      setTimeout(() => {
+        const sampleText = `This is a sample transcription. It includes multiple sentences. We can also add more sentences to test the editor. And even more sentences to test the editor.`;
+        setTranscription(sampleText);
+        setEditedText(sampleText);
+        setIsLoading(false);
+      }, 2000);
+    } catch (err) {
+      setError('Failed to process audio file');
+      setIsLoading(false);
     }
+  };
 
-    export default App;
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8"
+    >
+      <div className="container mx-auto px-4 max-w-4xl">
+        <motion.div 
+          className="flex items-center justify-center mb-8"
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <FileAudio2 className="h-12 w-12 mr-2 text-blue-500" />
+          <h1 className="text-3xl font-bold text-gray-800">Audio Transcription</h1>
+        </motion.div>
+
+        <AudioUpload onUpload={handleUpload} />
+
+        {isLoading && (
+          <motion.div
+            className="mt-8 p-4 bg-blue-50 rounded-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <p className="text-blue-600">Processing audio...</p>
+          </motion.div>
+        )}
+
+        {error && (
+          <motion.div
+            className="mt-8 p-4 bg-red-50 rounded-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <p className="text-red-600">{error}</p>
+          </motion.div>
+        )}
+
+        {transcription && !isLoading && (
+          <motion.div 
+            className="mt-8 space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <TranscriptionDisplay transcription={transcription} />
+            <TextEditor initialText={editedText} />
+            <SpeakerIdentification speakers={speakers} />
+            <ExportOptions text={editedText} />
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+export default App;

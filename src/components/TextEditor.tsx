@@ -1,33 +1,29 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import MDEditor from '@uiw/react-md-editor';
+import { useTranscriptionStore } from '../store';
 
-    interface TextEditorProps {
-      initialText: string;
-      onTextChange: (text: string) => void;
-    }
+interface TextEditorProps {
+  initialText: string;
+}
 
-    const TextEditor: React.FC<TextEditorProps> = ({ initialText, onTextChange }) => {
-      const [text, setText] = useState(initialText);
-      const editorRef = useRef<HTMLTextAreaElement>(null);
+const TextEditor: React.FC<TextEditorProps> = ({ initialText }) => {
+  const { editedText, setEditedText } = useTranscriptionStore();
 
-      useEffect(() => {
-        setText(initialText);
-      }, [initialText]);
+  useEffect(() => {
+    setEditedText(initialText);
+  }, [initialText, setEditedText]);
 
-      const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const newText = e.target.value;
-        setText(newText);
-        onTextChange(newText);
-      };
+  return (
+    <div className="mt-6" data-color-mode="light">
+      <MDEditor
+        value={editedText}
+        onChange={(value) => setEditedText(value || '')}
+        height={300}
+        preview="edit"
+        extraCommands={[]}
+      />
+    </div>
+  );
+};
 
-      return (
-        <textarea
-          ref={editorRef}
-          value={text}
-          onChange={handleChange}
-          className="w-full h-64 p-4 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="Edit transcription here..."
-        />
-      );
-    };
-
-    export default TextEditor;
+export default TextEditor;
